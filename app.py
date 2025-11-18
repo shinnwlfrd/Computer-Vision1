@@ -8,7 +8,7 @@ from PIL import Image
 # PAGE SETTINGS
 # ============================
 st.set_page_config(
-    page_title="Deteksi Kesegaran Ikan",
+    page_title="Deteksi Kematangan Tomat",
     layout="wide"
 )
 
@@ -109,14 +109,14 @@ def hybrid_predict(arr):
 # ============================
 # UI LAYOUT
 # ============================
-st.markdown("<div class='main-title'>Deteksi Kesegaran Ikan (Hybrid CNN + KNN)</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>Deteksi Kematangan Tomat (Hybrid CNN + KNN)</div>", unsafe_allow_html=True)
 
 left, right = st.columns([1.3, 1])
 
 # LEFT SIDE
 with left:
-    st.markdown("<div class='card'><b>📤 Upload Gambar Ikan</b></div>", unsafe_allow_html=True)
-    uploaded = st.file_uploader("Pilih gambar ikan", type=["jpg", "png", "jpeg"])
+    st.markdown("<div class='card'><b>📤 Upload Gambar Tomat</b></div>", unsafe_allow_html=True)
+    uploaded = st.file_uploader("Pilih gambar Tomat", type=["jpg", "png", "jpeg"])
 
     if uploaded:
         img = Image.open(uploaded)
@@ -132,14 +132,14 @@ with left:
 
             st.markdown("<div class='result-box'>", unsafe_allow_html=True)
             st.write("### Hasil Prediksi:")
-            st.write(f"**Ikan terdeteksi sebagai:** `{result.upper()}`")
+            st.write(f"**Tomat terdeteksi sebagai:** `{result.upper()}`")
             st.markdown("</div>", unsafe_allow_html=True)
 
 # RIGHT SIDE
 with right:
     st.markdown("<div class='card'><b>ℹ️ Informasi Aplikasi</b></div>", unsafe_allow_html=True)
     st.write("""
-Aplikasi ini mendeteksi kesegaran ikan menggunakan Hybrid CNN + KNN:
+Aplikasi ini mendeteksi Kematangan Tomat menggunakan Hybrid CNN + KNN:
 - CNN sebagai extractor fitur
 - KNN sebagai classifier
 - Input citra grayscale 128×128  
