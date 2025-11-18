@@ -13,54 +13,107 @@ st.set_page_config(
 )
 
 # ============================
-# CUSTOM DARK THEME + REMOVE WHITE BOX
+# RESPONSIVE THEME (AUTO DARK/LIGHT BASED ON SYSTEM)
 # ============================
 st.markdown("""
 <style>
-
-/* REMOVE STREAMLIT WHITE BLOCKS */
-.css-1d391kg, .css-1iyw2u1, .css-12oz5g7, .css-18e3th9 {
+/* HAPUS LATAR BELAKANG BAWAAN STREAMLIT */
+*, .css-1d391kg, .css-1iyw2u1, .css-12oz5g7, .css-18e3th9,
+.st-emotion-cache-1v0mbdj, .st-emotion-cache-12w0qpk, section {
     background-color: transparent !important;
     box-shadow: none !important;
+    border: none !important;
 }
 
-/* MAIN BACKGROUND */
-main {
+/* TARGET KONTAINER UTAMA STREAMLIT */
+[data-testid="stAppViewContainer"] {
     background-color: #0f172a;
+    color: #e2e8f0;
 }
 
-/* TEXT COLOR */
-body, p, div, span {
-    color: #e2e8f0 !important;
+/* DARK MODE (DEFAULT FALLBACK + SYSTEM DARK) */
+@media (prefers-color-scheme: dark) {
+    [data-testid="stAppViewContainer"] {
+        background-color: #0f172a !important;
+        color: #e2e8f0 !important;
+    }
+    .main-title {
+        color: #60a5fa;
+    }
+    .card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #e2e8f0;
+    }
+    .result-box {
+        background: rgba(59,130,246,0.15);
+        border-left: 4px solid #3b82f6;
+        color: #e2e8f0;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #1e293b !important;
+        color: #e2e8f0 !important;
+    }
+    .stMarkdown, p, div, span, li, ul, ol, h1, h2, h3, h4, h5, h6 {
+        color: #e2e8f0 !important;
+    }
+    input, textarea, .stFileUploader {
+        color: #e2e8f0 !important;
+        background-color: rgba(0,0,0,0.2) !important;
+    }
 }
 
-/* HEADER TITLE */
+/* LIGHT MODE (SYSTEM LIGHT) */
+@media (prefers-color-scheme: light) {
+    [data-testid="stAppViewContainer"] {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+    }
+    .main-title {
+        color: #2563eb;
+    }
+    .card {
+        background: rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #1e293b;
+    }
+    .result-box {
+        background: rgba(37,99,235,0.1);
+        border-left: 4px solid #2563eb;
+        color: #1e293b;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #e2e8f0 !important;
+        color: #1e293b !important;
+    }
+    .stMarkdown, p, div, span, li, ul, ol, h1, h2, h3, h4, h5, h6 {
+        color: #1e293b !important;
+    }
+    input, textarea, .stFileUploader {
+        color: #1e293b !important;
+        background-color: white !important;
+    }
+}
+
+/* GLOBAL STYLING */
 .main-title {
     font-size: 34px;
     font-weight: bold;
     text-align: center;
-    color: #60a5fa;
     padding: 10px 0 30px 0;
 }
 
-/* CUSTOM CARD */
 .card {
-    background: rgba(255,255,255,0.05);
     padding: 18px;
     border-radius: 12px;
     margin-bottom: 20px;
-    border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* RESULT BOX */
 .result-box {
-    background: rgba(59,130,246,0.15);
     padding: 18px;
-    border-left: 4px solid #3b82f6;
     border-radius: 8px;
 }
 
-/* BUTTON STYLE */
 .stButton > button {
     width: 100%;
     background: #2563eb !important;
@@ -73,12 +126,6 @@ body, p, div, span {
 .stButton > button:hover {
     background: #1e40af !important;
 }
-
-/* SIDEBAR DARK */
-[data-testid="stSidebar"] {
-    background-color: #1e293b !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,12 +134,15 @@ body, p, div, span {
 # ============================
 @st.cache_resource
 def load_models():
-    cnn_model = tf.keras.models.load_model("cnn_feature_extractor.h5")
-    knn_model = joblib.load("knn_classifier.pkl")
-    return cnn_model, knn_model
+    try:
+        cnn_model = tf.keras.models.load_model("cnn_feature_extractor.h5")
+        knn_model = joblib.load("knn_classifier.pkl")
+        return cnn_model, knn_model
+    except Exception as e:
+        st.error(f"Gagal memuat model: {str(e)}")
+        st.stop()
 
 cnn, knn = load_models()
-
 IMG_SIZE = 128
 
 def preprocess_image(img):
@@ -102,9 +152,11 @@ def preprocess_image(img):
     return arr
 
 def hybrid_predict(arr):
-    feature = cnn.predict(arr)
+    feature = cnn.predict(arr, verbose=0)
     label = knn.predict(feature)[0]
-    return "fresh" if label == 1 else "nonfresh"
+    # Asumsi: 1 = ripe/mature, 0 = unripe/immature
+    # Anda bisa sesuaikan berdasarkan label asli model Anda
+    return "matang" if label == 1 else "belum matang"
 
 # ============================
 # UI LAYOUT
@@ -129,17 +181,18 @@ with left:
         st.markdown("<div class='card'><b>🤖 Klasifikasi</b></div>", unsafe_allow_html=True)
         if st.button("Prediksi"):
             result = hybrid_predict(arr)
-
-            st.markdown("<div class='result-box'>", unsafe_allow_html=True)
-            st.write("### Hasil Prediksi:")
-            st.write(f"**Tomat terdeteksi sebagai:** `{result.upper()}`")
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='result-box'>
+                <h4>Hasil Prediksi:</h4>
+                <p><b>Tomat terdeteksi sebagai:</b> <code>{result.upper()}</code></p>
+            </div>
+            """, unsafe_allow_html=True)
 
 # RIGHT SIDE
 with right:
     st.markdown("<div class='card'><b>ℹ️ Informasi Aplikasi</b></div>", unsafe_allow_html=True)
     st.write("""
-Aplikasi ini mendeteksi Kematangan Tomat menggunakan Hybrid CNN + KNN:
+Aplikasi ini mendeteksi kematangan tomat menggunakan Hybrid CNN + KNN:
 - CNN sebagai extractor fitur
 - KNN sebagai classifier
 - Input citra grayscale 128×128  
